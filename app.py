@@ -54,7 +54,7 @@ SWARM_ROLES = [
 
 def call_api(messages):
     client = openai.OpenAI(
-        api_key="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",
+        api_key=os.environ.get("GROQ_API_KEY"),
         base_url="https://api.groq.com/openai/v1",
     )
     response = client.chat.completions.create(
