@@ -1,0 +1,137 @@
+{
+  "benchmark_version": "sv-v1",
+  "tasks": [
+    {
+      "id": "t01",
+      "task_bucket": "coding",
+      "prompt": "Implement a function that takes a list of integers and returns the longest contiguous subarray whose sum is divisible by a given divisor k. Handle edge cases: empty list, k=0, all negatives. Provide the function signature, implementation, and one test case that would fail for a naive O(n²) solution but passes for an O(n) solution.",
+      "success_criteria": [
+        "Function correctly identifies a valid contiguous subarray whose sum is divisible by k",
+        "Edge cases (empty list, k=0, all negatives) are handled with clear behavior or documented error",
+        "At least one test case is provided that distinguishes O(n) from O(n²) approach",
+        "Code is syntactically valid and runnable in a standard Python environment"
+      ]
+    },
+    {
+      "id": "t02",
+      "task_bucket": "coding",
+      "prompt": "Given a directed graph represented as an adjacency list, write a function that returns whether the graph contains a cycle. Then write a second function that, if a cycle exists, returns one cycle as a list of vertex IDs in order. Assume vertex IDs are non-negative integers. Do not use a built-in graph library for cycle detection.",
+      "success_criteria": [
+        "Cycle detection correctly returns true for graphs with cycles and false for acyclic graphs",
+        "When a cycle exists, the returned list forms a valid cycle (each consecutive pair has an edge, first and last are same)",
+        "Implementation does not rely on external graph libraries for cycle detection",
+        "Both functions have clear signatures and handle empty or single-node graphs"
+      ]
+    },
+    {
+      "id": "t03",
+      "task_bucket": "research",
+      "prompt": "List the main causes of the 1973 oil crisis, the key countries or organizations involved, and two lasting economic or policy changes that resulted. For each cause and each change, cite a specific year or event that supports it. Structure the answer so a reader can verify each claim.",
+      "success_criteria": [
+        "At least two distinct causes of the 1973 oil crisis are named",
+        "Key countries or organizations are correctly identified",
+        "Two lasting economic or policy changes are stated with plausible linkage to the crisis",
+        "Each claim is tied to a verifiable year or event (no unsupported assertions)"
+      ]
+    },
+    {
+      "id": "t04",
+      "task_bucket": "research",
+      "prompt": "Compare the definitions of 'recession' used by the NBER (US) and the Eurozone (e.g., Eurostat or two consecutive quarters of negative GDP). State the exact criteria for each, then identify one scenario where the two definitions would give different answers (recession in one, not in the other).",
+      "success_criteria": [
+        "NBER-style recession criteria are accurately described",
+        "Eurozone/two-quarter rule is accurately described",
+        "A concrete scenario is given where one definition yields recession and the other does not",
+        "No internal contradiction between stated definitions and the example scenario"
+      ]
+    },
+    {
+      "id": "t05",
+      "task_bucket": "planning",
+      "prompt": "A team has 5 days to ship a small software feature. Day 1–2: design and API contract. Day 3: backend implementation. Day 4: frontend and integration. Day 5: testing and docs. Dependencies: frontend cannot start until API contract is fixed; testing needs both backend and frontend. Create a day-by-day schedule that respects dependencies and leaves a buffer for integration issues. List what happens each day and what the buffer is.",
+      "success_criteria": [
+        "Schedule respects the stated dependency (frontend after API contract)",
+        "Testing is scheduled after both backend and frontend are available",
+        "Each of the 5 days has a clear assignment",
+        "A concrete buffer (time or scope) for integration issues is specified"
+      ]
+    },
+    {
+      "id": "t06",
+      "task_bucket": "planning",
+      "prompt": "Plan a 3-day trip to a city you choose. Constraints: budget 500 USD total, no car, must include one cultural site, one outdoor activity, and one local meal. Produce a day-by-day itinerary with estimated costs per item, and show that the total stays within budget. Include how you would adjust the plan if one attraction is closed.",
+      "success_criteria": [
+        "Each day has a clear itinerary with at least one activity",
+        "At least one cultural site, one outdoor activity, and one local meal are included",
+        "Cost estimates are given per major item and total is at or under 500 USD",
+        "A concrete adjustment is described if one attraction is closed"
+      ]
+    },
+    {
+      "id": "t07",
+      "task_bucket": "writing",
+      "prompt": "Write a 3-paragraph product description for a standalone desktop app that backs up selected folders to an external drive with incremental backups and optional encryption. Audience: non-technical home users. Do not use bullet points in the body. First paragraph: what it does and why it matters. Second: key features in prose. Third: one limitation and who might need something else.",
+      "success_criteria": [
+        "Exactly three paragraphs, no bullet lists in the body",
+        "First paragraph clearly states purpose and value for non-technical users",
+        "Second paragraph describes incremental backups and optional encryption in prose",
+        "Third paragraph states at least one limitation and suggests who might need an alternative"
+      ]
+    },
+    {
+      "id": "t08",
+      "task_bucket": "writing",
+      "prompt": "Rewrite the following into a single paragraph of 4–6 sentences that keeps the same meaning but uses active voice and removes jargon. Then list the three edits you made that had the largest impact. Original: 'It has been determined by the committee that the implementation of the new policy will be effectuated in Q3. Stakeholders will be notified in advance. It is recommended that feedback be submitted via the portal prior to the rollout.'",
+      "success_criteria": [
+        "Output is one paragraph, 4–6 sentences, same meaning as original",
+        "Passive constructions are replaced with active voice where applicable",
+        "Jargon (e.g. effectuated, rollout) is replaced with plainer language",
+        "Three specific edits are listed and each clearly improves clarity or tone"
+      ]
+    },
+    {
+      "id": "t09",
+      "task_bucket": "verification / fact-checking",
+      "prompt": "Claim: 'The first successful heart transplant was performed in South Africa in 1967.' Check this claim. State whether it is correct, partially correct, or incorrect. If partially correct or incorrect, state the accurate fact(s). Cite the surgeon's name and the correct date and location. Do not invent sources; if you rely on common knowledge, say so.",
+      "success_criteria": [
+        "Verdict (correct / partially correct / incorrect) is stated clearly",
+        "Surgeon name and date/location are given and consistent with the verdict",
+        "If the claim is wrong, the correct fact is stated",
+        "Any uncertainty or reliance on common knowledge is acknowledged"
+      ]
+    },
+    {
+      "id": "t10",
+      "task_bucket": "verification / fact-checking",
+      "prompt": "A post says: 'More than half of all plastic ever produced was made in the last 20 years.' Evaluate this claim. Break it down: what would need to be true (e.g., total production to date, production in the last 20 years)? State whether the claim is plausible, and what kind of source or statistic would confirm or refute it. Do not fabricate numbers.",
+      "success_criteria": [
+        "The claim is decomposed into measurable quantities (e.g., total production, recent production)",
+        "A clear criterion for the claim to be true is stated",
+        "Assessment of plausibility is given with reasoning",
+        "Type of source or data that would verify the claim is identified; no fake statistics"
+      ]
+    },
+    {
+      "id": "t11",
+      "task_bucket": "high-ambiguity reasoning",
+      "prompt": "Three people are in a room: A, B, and C. We know: (1) Exactly one always tells the truth, one always lies, one sometimes does either. (2) A says: 'B is not the liar.' (3) B says: 'C is not the truth-teller.' (4) C says: 'A is not the random one.' Determine who is the truth-teller, who is the liar, and who is random, or show that the statements are inconsistent. Show your reasoning step by step.",
+      "success_criteria": [
+        "All three roles (truth-teller, liar, random) are assigned or inconsistency is proven",
+        "Reasoning uses the three statements and the constraints (exactly one of each type)",
+        "No logical contradiction in the assignment; if inconsistent, the contradiction is shown",
+        "Steps are explicit enough to follow the deduction"
+      ]
+    },
+    {
+      "id": "t12",
+      "task_bucket": "high-ambiguity reasoning",
+      "prompt": "A company policy says: 'Employees may work from home only if they have manager approval and their role is designated remote-eligible.' An employee works from home. What can we conclude? List all conclusions that are logically guaranteed, and list at least one conclusion that is not guaranteed (common misinterpretation). Justify each with the exact wording of the policy.",
+      "success_criteria": [
+        "At least one conclusion that is logically guaranteed is stated and justified by the policy text",
+        "At least one conclusion that is not guaranteed (but people might assume) is stated and explained",
+        "Reasoning uses the conditional structure of the policy (if A and B, then C)",
+        "No conclusion is claimed as guaranteed that does not follow from the policy wording"
+      ]
+    }
+  ]
+}

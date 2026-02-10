@@ -16,19 +16,23 @@ from typing import Any, Optional
 class FailureReason(str, Enum):
     PLANNING_ERROR = "planning_error"
     TOOL_MISUSE = "tool_misuse"
+    TOOL_FAILURE = "tool_failure"
     HALLUCINATION = "hallucination"
     TIMEOUT = "timeout"
     CONSTRAINT_BREAK = "constraint_break"
     BUDGET_EXCEEDED = "budget_exceeded"
+    UNRESOLVED_DISAGREEMENT = "unresolved_disagreement"
 
 
 # ---------------------------------------------------------------------------
-# Paths (append-only files)
+# Paths (append-only files) — Instrumentation Appendix v0.1
 # ---------------------------------------------------------------------------
 
-EVENTS_PATH = os.environ.get("SWARM_EVENTS_PATH", "events.jsonl")
-SUMMARIES_PATH = os.environ.get("SWARM_SUMMARIES_PATH", "run_summaries.jsonl")
-RUNS_PATH = os.environ.get("SWARM_RUNS_PATH", "runs.jsonl")
+_BASE = os.path.dirname(os.path.abspath(__file__))
+_LOGS_DIR = os.path.join(_BASE, "logs")
+EVENTS_PATH = os.environ.get("SWARM_EVENTS_PATH", os.path.join(_LOGS_DIR, "events.jsonl"))
+SUMMARIES_PATH = os.environ.get("SWARM_SUMMARIES_PATH", os.path.join(_LOGS_DIR, "runs.jsonl"))
+RUNS_PATH = os.environ.get("SWARM_RUNS_PATH", os.path.join(_LOGS_DIR, "runs.jsonl"))
 
 
 def _ensure_dir(path: str) -> None:
@@ -57,13 +61,19 @@ def log_event(
     tokens_out: int = 0,
     task_bucket: str = "",
     retry_count: int = 0,
+    tool: Optional[str] = None,
+    tool_ok: Optional[bool] = None,
+    seed: Optional[int] = None,
+    handoff_to: Optional[str] = None,
     path: Optional[str] = None,
 ) -> None:
     """
     Emit one JSON event per meaningful state transition. Append-only JSONL.
     arm: "monolith" | "swarm"
     phase: "plan" | "act" | "tool" | "verify" | "decide" | "finalize"
-    event: "message" | "tool_call" | "tool_result" | "error" | "retry" | "end"
+    event: "message" | "tool_call" | "tool_result" | "error" | "retry" | "escalation" | "judge_score" | "end"
+    Matches Instrumentation Appendix v0.1 (ts, run_id, task_id, arm, agent_id, versonality,
+    phase, event, tokens_in/out, tool/tool_ok, metadata.{task_bucket, seed, retry_count, handoff_to}).
     """
     out = path or EVENTS_PATH
     _ensure_dir(out)
@@ -78,9 +88,13 @@ def log_event(
         "event": event,
         "tokens_in": tokens_in,
         "tokens_out": tokens_out,
+        "tool": tool,
+        "tool_ok": tool_ok,
         "metadata": {
             "task_bucket": task_bucket,
             "retry_count": retry_count,
+            "seed": seed,
+            "handoff_to": handoff_to,
         },
     }
     with open(out, "a", encoding="utf-8") as f:
@@ -104,10 +118,33 @@ def write_run_summary(
     tokens_out: int,
     cost_usd: float,
     retry_count: int = 0,
+    *,
+    seed: Optional[int] = None,
+    max_tokens: Optional[int] = None,
+    max_seconds: Optional[float] = None,
+    constraint_adherence: Optional[float] = None,
+    policy_violation: bool = False,
+    hallucination_critical: bool = False,
+    wall_seconds: Optional[float] = None,
+    tool_calls: int = 0,
+    tool_calls_ok: int = 0,
+    swarm_conflict: Optional[bool] = None,
+    consensus_seconds: Optional[float] = None,
+    handoffs: Optional[int] = None,
+    duplicate_work: Optional[bool] = None,
+    cost_model: float = 0.0,
+    cost_tools: float = 0.0,
     path: Optional[str] = None,
 ) -> None:
     """
     At end of run: emit one summary object. Persist separately from event logs.
+    Matches Instrumentation Appendix v0.1 run summary schema:
+    - budgets {max_tokens, max_seconds}
+    - outcome {success, failure_reason, policy_violation, hallucination_critical}
+    - scores {quality, constraint_adherence}
+    - usage {wall_seconds, tokens_in, tokens_out, tool_calls, tool_calls_ok}
+    - swarm {conflict, consensus_seconds, handoffs, duplicate_work}
+    - cost_usd {model, tools, total}
     quality: 0–5 (manual input for now). failure_reason must be set iff success is False.
     """
     if not success and failure_reason is None:
@@ -116,19 +153,48 @@ def write_run_summary(
         failure_reason = None
     out = path or SUMMARIES_PATH
     _ensure_dir(out)
-    obj = {
+    swarm_block: Optional[dict[str, Any]] = None
+    if any(v is not None for v in (swarm_conflict, consensus_seconds, handoffs, duplicate_work)):
+        swarm_block = {
+            "conflict": swarm_conflict,
+            "consensus_seconds": consensus_seconds,
+            "handoffs": handoffs,
+            "duplicate_work": duplicate_work,
+        }
+    obj: dict[str, Any] = {
         "run_id": run_id,
         "task_id": task_id,
         "arm": arm,
+        "seed": seed,
         "task_bucket": task_bucket,
         "n_agents": n_agents,
+        "budgets": {
+            "max_tokens": max_tokens,
+            "max_seconds": max_seconds,
+        },
         "outcome": {
             "success": success,
             "failure_reason": failure_reason.value if failure_reason else None,
+            "policy_violation": policy_violation,
+            "hallucination_critical": hallucination_critical,
         },
-        "scores": {"quality": quality},
-        "usage": {"tokens_in": tokens_in, "tokens_out": tokens_out},
-        "cost_usd": {"total": cost_usd},
+        "scores": {
+            "quality": quality,
+            "constraint_adherence": constraint_adherence,
+        },
+        "usage": {
+            "wall_seconds": wall_seconds,
+            "tokens_in": tokens_in,
+            "tokens_out": tokens_out,
+            "tool_calls": tool_calls,
+            "tool_calls_ok": tool_calls_ok,
+        },
+        "swarm": swarm_block,
+        "cost_usd": {
+            "model": cost_model,
+            "tools": cost_tools,
+            "total": cost_usd,
+        },
         "retry_count": retry_count,
     }
     with open(out, "a", encoding="utf-8") as f:

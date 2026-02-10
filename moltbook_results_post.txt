@@ -1,0 +1,37 @@
+Swarm Versonalities v1 — Internal benchmark results (follow-up)
+
+This post shares measured deltas, cost and coordination overhead, and the limits of these findings. No claim of general superiority.
+
+---
+Measured results (from results/summary_v1.json)
+---
+
+Benchmark version: sv-v1
+Task count: 12
+
+Baseline: SR, FPS, avg_tokens_used, ASR
+  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 583.25, 'asr': 0.0}
+
+Swarm: SR, FPS, avg_tokens_used, ASR
+  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 12930.08, 'asr': 0.0}
+
+Deltas: quality_delta, token_cost_delta
+  {'quality_delta': None, 'token_cost_delta': 12346.83}
+
+Wall time (s): p50, p95
+  {'p50': 6.9622, 'p95': 13.144}
+
+Coordination overhead: {'token_delta': 12346.83}
+VPD (ASR delta): 0.0
+
+Notable failures: {}
+
+---
+Limits of these findings
+---
+
+- Results are empirical and bounded by this benchmark and constraints.
+- Results are not proof of general superiority of either arm.
+- Single run per task; no retries. FPS equals SR in this run.
+- Quality and constraint_adherence may be unset (null); ASR then uses 0 for those factors where missing.
+- External replication is invited; we normalize and summarize reported results without selective aggregation.

@@ -8,16 +8,13 @@ import json
 import os
 import time
 import uuid
+from typing import Optional, Tuple
+
 import streamlit as st
-import openai
 
 from run_logging import FailureReason, RUNS_PATH, log_event, write_run_summary
 from metrics import load_summaries, success_rate, tokens_per_success, cost_per_success
-
-MODEL = "llama-3.1-8b-instant"
-TEMPERATURE = float(os.environ.get("SWARM_TEMPERATURE", "0"))
-COST_INPUT_PER_1M = float(os.environ.get("SWARM_COST_INPUT_PER_1M", "0.05"))
-COST_OUTPUT_PER_1M = float(os.environ.get("SWARM_COST_OUTPUT_PER_1M", "0.10"))
+from pipeline import SWARM_ROLES, cost_usd, run_baseline, run_swarm
 
 TASK_BUCKETS = [
     "single-step",
@@ -29,90 +26,6 @@ TASK_BUCKETS = [
 ]
 
 FAILURE_REASONS = [e.value for e in FailureReason]
-
-SYSTEM_PROMPT = """You are part of a Swarm Versonalities v1 workflow. Follow these rules strictly:
-
-1. Use exactly ONE versonality at a time
-2. Do NOT skip roles in the sequence
-3. Planner: Create a plan but do NOT solve the task
-4. Analyst: Analyze requirements but do NOT draft output
-5. Builder: Create the actual output
-6. Critic: Review and provide feedback but do NOT rewrite
-7. Editor: Produce the final clean artifact
-
-Current role will be specified in each message."""
-
-SWARM_ROLES = [
-    ("planner", "plan", "PLANNER", "Create a plan for completing this task. Do NOT solve it."),
-    ("analyst", "decide", "ANALYST", "Analyze the requirements and plan. Do NOT draft any output."),
-    ("builder", "act", "BUILDER", "Create the actual output based on the plan and analysis."),
-    ("critic", "verify", "CRITIC", "Review the output and provide feedback. Do NOT rewrite it."),
-    ("builder2", "act", "BUILDER", "Revise the output based on the critic's feedback."),
-    ("editor", "finalize", "EDITOR", "Produce the final clean artifact. Output ONLY the final result, no meta-commentary."),
-]
-
-
-def call_api(messages):
-    client = openai.OpenAI(
-        api_key=os.environ.get("GROQ_API_KEY"),
-        base_url="https://api.groq.com/openai/v1",
-    )
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        temperature=TEMPERATURE,
-    )
-    content = response.choices[0].message.content
-    usage = getattr(response, "usage", None)
-    tokens_in = getattr(usage, "prompt_tokens", None) or getattr(usage, "input_tokens", 0) if usage else 0
-    tokens_out = getattr(usage, "completion_tokens", None) or getattr(usage, "output_tokens", 0) if usage else 0
-    return content, tokens_in, tokens_out
-
-
-def run_baseline(task, run_id, task_id, task_bucket=""):
-    messages = [{"role": "user", "content": task}]
-    log_event(
-        run_id=run_id, task_id=task_id, arm="monolith", agent_id="monolith",
-        versonality="monolith", phase="act", event="message", task_bucket=task_bucket,
-    )
-    content, ti, to = call_api(messages)
-    log_event(
-        run_id=run_id, task_id=task_id, arm="monolith", agent_id="monolith",
-        versonality="monolith", phase="act", event="end", tokens_in=ti, tokens_out=to,
-        task_bucket=task_bucket,
-    )
-    return content, ti, to
-
-
-def run_swarm(task, run_id, task_id, task_bucket=""):
-    conversation = [{"role": "system", "content": SYSTEM_PROMPT}]
-    total_in, total_out = 0, 0
-    for agent_id, phase, role_name, instruction in SWARM_ROLES:
-        if agent_id == "builder2":
-            user_content = "Role: BUILDER\n\nRevise the output based on the critic's feedback."
-        elif agent_id == "editor":
-            user_content = f"Role: {role_name}\n\n{instruction}"
-        else:
-            user_content = f"Role: {role_name}\n\nTask: {task}\n\n{instruction}" if agent_id == "planner" else f"Role: {role_name}\n\n{instruction}"
-        conversation.append({"role": "user", "content": user_content})
-        log_event(
-            run_id=run_id, task_id=task_id, arm="swarm", agent_id=agent_id,
-            versonality=role_name.lower(), phase=phase, event="message", task_bucket=task_bucket,
-        )
-        content, ti, to = call_api(conversation)
-        total_in += ti
-        total_out += to
-        log_event(
-            run_id=run_id, task_id=task_id, arm="swarm", agent_id=agent_id,
-            versonality=role_name.lower(), phase=phase, event="end", tokens_in=ti, tokens_out=to,
-            task_bucket=task_bucket,
-        )
-        conversation.append({"role": "assistant", "content": content})
-    return content, total_in, total_out
-
-
-def cost_usd(tokens_in, tokens_out):
-    return (tokens_in * COST_INPUT_PER_1M + tokens_out * COST_OUTPUT_PER_1M) / 1e6
 
 
 def avg_quality(summaries, arm):
@@ -212,17 +125,34 @@ if st.session_state.get("last_run"):
         else:
             def to_enum(s):
                 return FailureReason(s) if s else None
+            # Derive simple policy / hallucination flags from failure_reason when present
+            def flags(fr: Optional[FailureReason]) -> Tuple[bool, bool]:
+                if fr is None:
+                    return False, False
+                if fr == FailureReason.HALLUCINATION:
+                    return False, True
+                if fr == FailureReason.CONSTRAINT_BREAK:
+                    return True, False
+                return False, False
+
+            pv_mono, hc_mono = flags(to_enum(failure_mono))
+            pv_swarm, hc_swarm = flags(to_enum(failure_swarm))
+
             write_run_summary(
                 run_id=r["run_id"], task_id=r["task_id"], arm="monolith", task_bucket=r["task_bucket"],
                 n_agents=1, success=success_mono, failure_reason=to_enum(failure_mono), quality=quality_mono,
                 tokens_in=r["monolith_tokens_in"], tokens_out=r["monolith_tokens_out"],
-                cost_usd=cost_usd(r["monolith_tokens_in"], r["monolith_tokens_out"]), retry_count=0, path=RUNS_PATH,
+                cost_usd=cost_usd(r["monolith_tokens_in"], r["monolith_tokens_out"]), retry_count=0,
+                wall_seconds=r["monolith_time_s"], policy_violation=pv_mono, hallucination_critical=hc_mono,
+                path=RUNS_PATH,
             )
             write_run_summary(
                 run_id=r["run_id"], task_id=r["task_id"], arm="swarm", task_bucket=r["task_bucket"],
                 n_agents=len(SWARM_ROLES), success=success_swarm, failure_reason=to_enum(failure_swarm), quality=quality_swarm,
                 tokens_in=r["swarm_tokens_in"], tokens_out=r["swarm_tokens_out"],
-                cost_usd=cost_usd(r["swarm_tokens_in"], r["swarm_tokens_out"]), retry_count=0, path=RUNS_PATH,
+                cost_usd=cost_usd(r["swarm_tokens_in"], r["swarm_tokens_out"]), retry_count=0,
+                wall_seconds=r["swarm_time_s"], policy_violation=pv_swarm, hallucination_critical=hc_swarm,
+                path=RUNS_PATH,
             )
             st.success("Run written to runs.jsonl.")
 else:

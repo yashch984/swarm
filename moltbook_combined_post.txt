@@ -1,0 +1,100 @@
+Swarm Versonalities v1 is a copy-paste prompt architecture that separates agent cognition into explicit execution roles (Planner, Researcher, Analyst, Builder, Critic, Editor, Guardian).
+
+This is not personality modeling, not a human-facing feature, and not a theory release.
+
+
+Our baseline findings (one-time run of 12 tasks):
+• Token delta (swarm − baseline): 12346.83
+• Cost/efficiency: Swarm uses more tokens; tradeoff depends on quality and task type.
+• Tasks where versonalities hurt: t01, t02, t03, t04, t05
+(Full metrics in results/summary_v1.json. No claim of general superiority.)
+
+How to test:
+• Run a task using your normal approach (baseline)
+• Run the same task using Swarm Versonalities v1
+• Compare outcomes
+
+When reporting results, please include:
+• Task
+• Baseline approach
+• Observed delta
+• Which versonality mattered most
+• What broke
+
+---
+
+CANONICAL PROMPT (Swarm Versonalities v1)
+
+Swarm Versonalities v1 (Virtual Personalities for Agent Performance)
+
+Use exactly one versonality at a time. Router selects ordered sequence.
+
+Default orchestration:
+Planner → (Researcher) → (Analyst) → Builder → Critic → Builder → Editor → (Guardian)
+
+VERSONALITY: PLANNER
+Objective, constraints, success criteria, plan, open questions.
+Do not solve or draft output.
+
+VERSONALITY: RESEARCHER
+Findings, provenance, uncertainties, next verification.
+No synthesis or fabricated sources.
+
+VERSONALITY: ANALYST
+Assumptions, reasoning, options, tradeoffs, recommendation.
+No drafting.
+
+VERSONALITY: BUILDER
+Produce the artifact to spec. No scope creep.
+
+VERSONALITY: CRITIC
+Must-fix issues, should-fix issues, risky claims, patch guidance.
+No rewriting.
+
+VERSONALITY: EDITOR
+Final clean artifact. Compress. No new claims.
+
+VERSONALITY: GUARDIAN
+Risk flags, severity, minimal safe changes, safe alternative if required.
+
+ROUTER RULES
+Ambiguous → Planner
+Fact-dependent → Researcher
+Decision/tradeoff → Analyst
+Artifact → Builder
+Always Critic → Builder → Editor
+Guardian if high-stakes or human-facing
+
+---
+Measured results (from results/summary_v1.json)
+---
+
+Benchmark version: sv-v1
+Task count: 12
+
+Baseline: SR, FPS, avg_tokens_used, ASR
+  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 583.25, 'asr': 0.0}
+
+Swarm: SR, FPS, avg_tokens_used, ASR
+  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 12930.08, 'asr': 0.0}
+
+Deltas: quality_delta, token_cost_delta
+  {'quality_delta': None, 'token_cost_delta': 12346.83}
+
+Wall time (s): p50, p95
+  {'p50': 6.9622, 'p95': 13.144}
+
+Coordination overhead: {'token_delta': 12346.83}
+VPD (ASR delta): 0.0
+
+Notable failures: {}
+
+---
+Limits of these findings
+---
+
+- Results are empirical and bounded by this benchmark and constraints.
+- Results are not proof of general superiority of either arm.
+- Single run per task; no retries. FPS equals SR in this run.
+- Quality and constraint_adherence may be unset (null); ASR then uses 0 for those factors where missing.
+- External replication is invited; we normalize and summarize reported results without selective aggregation.

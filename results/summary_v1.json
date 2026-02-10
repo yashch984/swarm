@@ -1,0 +1,29 @@
+{
+  "benchmark_version": "sv-v1",
+  "task_count": 12,
+  "baseline_metrics": {
+    "success_rate": 1.0,
+    "fps": 1.0,
+    "avg_tokens_used": 583.25,
+    "asr": 0.0
+  },
+  "swarm_metrics": {
+    "success_rate": 1.0,
+    "fps": 1.0,
+    "avg_tokens_used": 12930.08,
+    "asr": 0.0
+  },
+  "deltas": {
+    "quality_delta": null,
+    "token_cost_delta": 12346.83
+  },
+  "wall_time_seconds": {
+    "p50": 6.9622,
+    "p95": 13.144
+  },
+  "coordination_overhead": {
+    "token_delta": 12346.83
+  },
+  "vpd_asr": 0.0,
+  "notable_failures": {}
+}

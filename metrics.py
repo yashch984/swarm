@@ -102,3 +102,144 @@ def cost_per_success(
         return 0.0
     total = sum((s.get("cost_usd") or {}).get("total", 0.0) for s in successful)
     return total / len(successful)
+
+
+# ---------------------------------------------------------------------------
+# Additional spec-aligned metrics (Tool Correctness, policy/hallucination rates)
+# ---------------------------------------------------------------------------
+
+
+def tool_correctness(
+    summaries: Optional[List[dict]] = None,
+    path: Optional[str] = None,
+    arm: Optional[str] = None,
+    task_bucket: Optional[str] = None,
+) -> float:
+    """
+    Tool Correctness (TC) = tool_calls_ok / tool_calls across the filtered set.
+    Returns 0.0 when there are no tool calls.
+    """
+    data = summaries if summaries is not None else load_summaries(path)
+    data = _filter(data, arm=arm, task_bucket=task_bucket)
+    total_calls = 0
+    total_ok = 0
+    for s in data:
+        u = s.get("usage") or {}
+        total_calls += u.get("tool_calls", 0) or 0
+        total_ok += u.get("tool_calls_ok", 0) or 0
+    if total_calls == 0:
+        return 0.0
+    return total_ok / total_calls
+
+
+def policy_violation_rate(
+    summaries: Optional[List[dict]] = None,
+    path: Optional[str] = None,
+    arm: Optional[str] = None,
+    task_bucket: Optional[str] = None,
+) -> float:
+    """Fraction of runs with outcome.policy_violation == True."""
+    data = summaries if summaries is not None else load_summaries(path)
+    data = _filter(data, arm=arm, task_bucket=task_bucket)
+    if not data:
+        return 0.0
+    violations = 0
+    for s in data:
+        o = s.get("outcome") or {}
+        if o.get("policy_violation"):
+            violations += 1
+    return violations / len(data)
+
+
+def critical_hallucination_rate(
+    summaries: Optional[List[dict]] = None,
+    path: Optional[str] = None,
+    arm: Optional[str] = None,
+    task_bucket: Optional[str] = None,
+) -> float:
+    """Fraction of runs with outcome.hallucination_critical == True."""
+    data = summaries if summaries is not None else load_summaries(path)
+    data = _filter(data, arm=arm, task_bucket=task_bucket)
+    if not data:
+        return 0.0
+    crit = 0
+    for s in data:
+        o = s.get("outcome") or {}
+        if o.get("hallucination_critical"):
+            crit += 1
+    return crit / len(data)
+
+
+def average_quality(
+    summaries: Optional[List[dict]] = None,
+    path: Optional[str] = None,
+    arm: Optional[str] = None,
+    task_bucket: Optional[str] = None,
+) -> Optional[float]:
+    """Mean rubric quality score (0–5) across filtered runs; None if no scores."""
+    data = summaries if summaries is not None else load_summaries(path)
+    data = _filter(data, arm=arm, task_bucket=task_bucket)
+    vals: List[float] = []
+    for s in data:
+        sc = s.get("scores") or {}
+        q = sc.get("quality")
+        if q is not None:
+            vals.append(float(q))
+    if not vals:
+        return None
+    return sum(vals) / len(vals)
+
+
+def _format_pct(x: float) -> str:
+    return f"{x:.2%}" if x else "0.00%"
+
+
+def _format_float(x: Optional[float], digits: int = 2) -> str:
+    if x is None:
+        return "—"
+    return f"{x:.{digits}f}"
+
+
+if __name__ == "__main__":
+    """
+    Quick CLI summary of key metrics per arm, using logs/runs.jsonl:
+
+        python metrics.py
+
+    Prints:
+    - Success Rate (SR)
+    - First-Pass Success (FPS)
+    - Avg Quality
+    - Tokens per Success
+    - Cost per Success
+    - Tool Correctness
+    - Policy Violation Rate
+    - Critical Hallucination Rate
+    """
+    all_summaries = load_summaries()
+    arms = ["monolith", "swarm"]
+    print("Arm, SR, FPS, AvgQuality, TokensPerSuccess, CostPerSuccess, ToolCorrectness, PolicyViolationRate, CriticalHallucinationRate")
+    for arm in arms:
+        sr = success_rate(summaries=all_summaries, arm=arm)
+        fps = first_pass_success(summaries=all_summaries, arm=arm)
+        aq = average_quality(summaries=all_summaries, arm=arm)
+        tps = tokens_per_success(summaries=all_summaries, arm=arm)
+        cps = cost_per_success(summaries=all_summaries, arm=arm)
+        tc = tool_correctness(summaries=all_summaries, arm=arm)
+        pvr = policy_violation_rate(summaries=all_summaries, arm=arm)
+        chr_ = critical_hallucination_rate(summaries=all_summaries, arm=arm)
+        print(
+            ",".join(
+                [
+                    arm,
+                    _format_pct(sr),
+                    _format_pct(fps),
+                    _format_float(aq, 2),
+                    _format_float(tps, 0),
+                    _format_float(cps, 6),
+                    _format_pct(tc),
+                    _format_pct(pvr),
+                    _format_pct(chr_),
+                ]
+            )
+        )

@@ -1,0 +1,84 @@
+{
+  "generated_at": "2026-02-10T09:32:14Z",
+  "benchmark_version": "sv-v1",
+  "task_count": 12,
+  "deltas": {
+    "quality_delta": null,
+    "token_cost_delta": 12346.83
+  },
+  "vpd_asr": 0.0,
+  "coordination_overhead": {
+    "token_delta": 12346.83
+  },
+  "where_versonalities_helped": [],
+  "where_versonalities_hurt": [
+    {
+      "task_id": "t01",
+      "task_bucket": "coding",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t02",
+      "task_bucket": "coding",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t03",
+      "task_bucket": "research",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t04",
+      "task_bucket": "research",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t05",
+      "task_bucket": "planning",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t06",
+      "task_bucket": "planning",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t07",
+      "task_bucket": "writing",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t08",
+      "task_bucket": "writing",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t09",
+      "task_bucket": "verification / fact-checking",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t10",
+      "task_bucket": "verification / fact-checking",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t11",
+      "task_bucket": "high-ambiguity reasoning",
+      "reason": "swarm_more_tokens"
+    },
+    {
+      "task_id": "t12",
+      "task_bucket": "high-ambiguity reasoning",
+      "reason": "swarm_more_tokens"
+    }
+  ],
+  "neutral": [],
+  "cost_efficiency_tradeoff": {
+    "swarm_uses_more_tokens": true,
+    "token_delta": 12346.83,
+    "baseline_avg_tokens": 583.25,
+    "swarm_avg_tokens": 12930.08
+  },
+  "notable_failures": {}
+}

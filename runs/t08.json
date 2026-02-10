@@ -1,0 +1,16 @@
+{
+  "task_id": "t08",
+  "task_bucket": "writing",
+  "baseline_output": "The committee has decided to implement the new policy in Q3. Stakeholders will be informed in advance, and their input is crucial to the process. To ensure a smooth rollout, we encourage stakeholders to submit their feedback through the online portal before the policy takes effect. This will help us address any concerns and make necessary adjustments. By doing so, we can ensure a successful implementation of the new policy.\n\nEdits made with the largest impact:\n\n1. Changed 'It has been determined' to 'The committee has decided' - This change shifts the focus from a passive statement to an active one, making the committee the agent of action.\n2. Changed 'will be effectuated' to 'will implement' - This edit simplifies the language and uses a more common verb to convey the same meaning.\n3. Changed 'It is recommended' to 'we encourage' - This change makes the language more direct and engaging, and it's more suitable for a business or organizational context.",
+  "swarm_output": "The committee has decided to implement the new policy in Q3. To ensure a smooth transition, stakeholders will be notified in advance of the changes. Feedback is encouraged and can be submitted through the portal before the rollout. This will help identify any issues and make necessary adjustments. By involving stakeholders early on, we can minimize disruptions and ensure a successful implementation. We appreciate your participation in this process and value your input.",
+  "metrics": {
+    "success": true,
+    "quality_score": null,
+    "constraint_adherence": null,
+    "wall_time_seconds": 4.3613,
+    "tokens_used": 8408,
+    "baseline_tokens_used": 321,
+    "swarm_tokens_used": 8087,
+    "error_type": null
+  }
+}
