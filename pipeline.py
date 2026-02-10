@@ -1,9 +1,11 @@
 """
 Core monolith vs swarm pipeline shared by Streamlit UI and batch runner.
 
+Uses the Groq API only (official groq package). Requires GROQ_API_KEY.
+
 Contains:
 - MODEL / temperature / cost constants
-- call_api
+- call_api (Groq chat completions)
 - run_baseline (monolithic arm)
 - run_swarm (Swarm Versonalities arm)
 
@@ -13,13 +15,23 @@ No Streamlit imports here; this module is safe for offline batch runs.
 import os
 from typing import List, Tuple
 
-import openai
+from groq import Groq
 
 
 MODEL = "llama-3.1-8b-instant"
 TEMPERATURE = float(os.environ.get("SWARM_TEMPERATURE", "0"))
 COST_INPUT_PER_1M = float(os.environ.get("SWARM_COST_INPUT_PER_1M", "0.05"))
 COST_OUTPUT_PER_1M = float(os.environ.get("SWARM_COST_OUTPUT_PER_1M", "0.10"))
+
+
+def _get_groq_client() -> Groq:
+    api_key = (os.environ.get("GROQ_API_KEY") or "").strip()
+    if not api_key:
+        raise ValueError(
+            "GROQ_API_KEY is not set. Set it in your environment to use the Groq API.\n"
+            "Example: export GROQ_API_KEY='your-key'"
+        )
+    return Groq(api_key=api_key)
 
 
 SYSTEM_PROMPT = """You are part of a Swarm Versonalities v1 workflow. Follow these rules strictly:
@@ -46,10 +58,8 @@ SWARM_ROLES: List[Tuple[str, str, str, str]] = [
 
 
 def call_api(messages):
-    client = openai.OpenAI(
-        api_key=os.environ.get("GROQ_API_KEY"),
-        base_url="https://api.groq.com/openai/v1",
-    )
+    """Call Groq API (chat completions). Raises ValueError if GROQ_API_KEY is missing; raises groq.APIError on API errors."""
+    client = _get_groq_client()
     response = client.chat.completions.create(
         model=MODEL,
         messages=messages,
@@ -69,7 +79,8 @@ def cost_usd(tokens_in: int, tokens_out: int) -> float:
 def run_baseline(task: str, run_id: str, task_id: str, task_bucket: str = "", *, log_event=None):
     """
     Monolithic arm: single LLM call, no versonalities.
-    If log_event is provided, events are emitted using the shared logging schema.
+    If log_event is provided, events are emitted to logs/events.jsonl.
+    This pipeline does not invoke tools; when extending with tools, call log_event(..., tool="name", tool_ok=...).
     """
     messages = [{"role": "user", "content": task}]
     if log_event is not None:
@@ -103,7 +114,8 @@ def run_baseline(task: str, run_id: str, task_id: str, task_bucket: str = "", *,
 def run_swarm(task: str, run_id: str, task_id: str, task_bucket: str = "", *, log_event=None):
     """
     Swarm arm: Planner → Analyst → Builder → Critic → Builder → Editor.
-    Uses SYSTEM_PROMPT and SWARM_ROLES. If log_event is provided, events are emitted.
+    Uses SYSTEM_PROMPT and SWARM_ROLES. If log_event is provided, events are emitted to logs/events.jsonl.
+    This pipeline does not invoke tools; when extending with tools, call log_event(..., tool="name", tool_ok=...).
     """
     conversation = [{"role": "system", "content": SYSTEM_PROMPT}]
     total_in, total_out = 0, 0

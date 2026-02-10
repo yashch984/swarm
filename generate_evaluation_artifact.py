@@ -87,6 +87,9 @@ def generate():
 
     token_delta = deltas.get("token_cost_delta") or overhead.get("token_delta")
     quality_delta = deltas.get("quality_delta")
+    constraint_delta = deltas.get("constraint_adherence_delta")
+    avg_quality = summary.get("avg_quality") or {}
+    avg_constraint = summary.get("avg_constraint_adherence") or {}
 
     artifact = {
         "generated_at": _ts(),
@@ -94,8 +97,13 @@ def generate():
         "task_count": n,
         "deltas": {
             "quality_delta": quality_delta,
+            "constraint_adherence_delta": constraint_delta,
             "token_cost_delta": token_delta,
         },
+        "avg_quality": avg_quality,
+        "avg_constraint_adherence": avg_constraint,
+        "runs_with_quality_scores": summary.get("runs_with_quality_scores"),
+        "runs_with_constraint_scores": summary.get("runs_with_constraint_scores"),
         "vpd_asr": vpd,
         "coordination_overhead": overhead,
         "where_versonalities_helped": helped,
@@ -115,8 +123,12 @@ def generate():
         "Internal evaluation artifact (Evaluation Spec v0.1)",
         "Generated: " + artifact["generated_at"],
         "",
+        "ASR = SR × (quality/5) × constraint_adherence (per run, then averaged).",
+        "Avg quality (baseline, swarm): " + str(avg_quality),
+        "Avg constraint adherence (baseline, swarm): " + str(avg_constraint),
         "Deltas:",
-        "  Quality delta: " + str(quality_delta),
+        "  Quality delta (swarm − baseline): " + str(quality_delta),
+        "  Constraint adherence delta: " + str(constraint_delta),
         "  Token cost delta (swarm − baseline): " + str(token_delta),
         "  VPD (ASR delta): " + str(vpd),
         "",

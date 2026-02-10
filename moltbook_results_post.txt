@@ -10,19 +10,27 @@ Benchmark version: sv-v1
 Task count: 12
 
 Baseline: SR, FPS, avg_tokens_used, ASR
-  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 583.25, 'asr': 0.0}
+  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 581.67, 'asr': 0.7858}
 
 Swarm: SR, FPS, avg_tokens_used, ASR
-  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 12930.08, 'asr': 0.0}
+  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 12953.08, 'asr': 0.7938}
 
-Deltas: quality_delta, token_cost_delta
-  {'quality_delta': None, 'token_cost_delta': 12346.83}
+Deltas: quality_delta, constraint_adherence_delta, token_cost_delta
+  {'quality_delta': 0.0417, 'constraint_adherence_delta': 0.0, 'token_cost_delta': 12371.42}
+
+Avg quality (0–5): baseline, swarm
+  {'baseline': 4.0833, 'swarm': 4.125}  [ASR = SR × (quality/5) × constraint_adherence]
+
+Avg constraint adherence (0–1): baseline, swarm
+  {'baseline': 0.9625, 'swarm': 0.9625}
+
+Runs with quality/constraint scores: 12 / 12
 
 Wall time (s): p50, p95
-  {'p50': 6.9622, 'p95': 13.144}
+  {'p50': 7.2417, 'p95': 12.5068}
 
-Coordination overhead: {'token_delta': 12346.83}
-VPD (ASR delta): 0.0
+Coordination overhead: {'token_delta': 12371.42}
+VPD (ASR delta): 0.0079
 
 Notable failures: {}
 

@@ -107,6 +107,9 @@ if st.session_state.get("last_run"):
     with ev1:
         st.markdown("**Monolith**")
         quality_mono = st.slider("Quality (0–5) — Monolith", 0.0, 5.0, 2.5, 0.5, key="q_mono")
+        constraint_mono = st.slider("Constraint adherence (0–1) — Monolith", 0.0, 1.0, 1.0, 0.05, key="ca_mono")
+        tool_calls_mono = st.number_input("Tool calls — Monolith", min_value=0, value=0, step=1, key="tc_mono")
+        tool_calls_ok_mono = st.number_input("Tool calls OK — Monolith", min_value=0, value=0, step=1, key="tco_mono")
         success_mono = st.checkbox("Success", value=True, key="s_mono")
         failure_mono = None
         if not success_mono:
@@ -114,6 +117,13 @@ if st.session_state.get("last_run"):
     with ev2:
         st.markdown("**Swarm**")
         quality_swarm = st.slider("Quality (0–5) — Swarm", 0.0, 5.0, 2.5, 0.5, key="q_swarm")
+        constraint_swarm = st.slider("Constraint adherence (0–1) — Swarm", 0.0, 1.0, 1.0, 0.05, key="ca_swarm")
+        tool_calls_swarm = st.number_input("Tool calls — Swarm", min_value=0, value=0, step=1, key="tc_swarm")
+        tool_calls_ok_swarm = st.number_input("Tool calls OK — Swarm", min_value=0, value=0, step=1, key="tco_swarm")
+        conflict_swarm = st.checkbox("Swarm had internal conflict/disagreement", value=False, key="conflict_swarm")
+        consensus_swarm = st.number_input("Consensus time (seconds) — Swarm", min_value=0.0, value=0.0, step=0.5, key="consensus_swarm")
+        handoffs_swarm = st.number_input("Handoffs — Swarm", min_value=0, value=len(SWARM_ROLES), step=1, key="handoffs_swarm")
+        duplicate_swarm = st.checkbox("Duplicate work occurred — Swarm", value=False, key="dup_swarm")
         success_swarm = st.checkbox("Success", value=True, key="s_swarm")
         failure_swarm = None
         if not success_swarm:
@@ -144,6 +154,9 @@ if st.session_state.get("last_run"):
                 tokens_in=r["monolith_tokens_in"], tokens_out=r["monolith_tokens_out"],
                 cost_usd=cost_usd(r["monolith_tokens_in"], r["monolith_tokens_out"]), retry_count=0,
                 wall_seconds=r["monolith_time_s"], policy_violation=pv_mono, hallucination_critical=hc_mono,
+                constraint_adherence=constraint_mono,
+                tool_calls=tool_calls_mono,
+                tool_calls_ok=tool_calls_ok_mono,
                 path=RUNS_PATH,
             )
             write_run_summary(
@@ -152,6 +165,13 @@ if st.session_state.get("last_run"):
                 tokens_in=r["swarm_tokens_in"], tokens_out=r["swarm_tokens_out"],
                 cost_usd=cost_usd(r["swarm_tokens_in"], r["swarm_tokens_out"]), retry_count=0,
                 wall_seconds=r["swarm_time_s"], policy_violation=pv_swarm, hallucination_critical=hc_swarm,
+                constraint_adherence=constraint_swarm,
+                tool_calls=tool_calls_swarm,
+                tool_calls_ok=tool_calls_ok_swarm,
+                swarm_conflict=conflict_swarm,
+                consensus_seconds=consensus_swarm,
+                handoffs=handoffs_swarm,
+                duplicate_work=duplicate_swarm,
                 path=RUNS_PATH,
             )
             st.success("Run written to runs.jsonl.")

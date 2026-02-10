@@ -4,26 +4,37 @@
   "baseline_metrics": {
     "success_rate": 1.0,
     "fps": 1.0,
-    "avg_tokens_used": 583.25,
-    "asr": 0.0
+    "avg_tokens_used": 581.67,
+    "asr": 0.7858
   },
   "swarm_metrics": {
     "success_rate": 1.0,
     "fps": 1.0,
-    "avg_tokens_used": 12930.08,
-    "asr": 0.0
+    "avg_tokens_used": 12953.08,
+    "asr": 0.7938
   },
   "deltas": {
-    "quality_delta": null,
-    "token_cost_delta": 12346.83
+    "quality_delta": 0.0417,
+    "constraint_adherence_delta": 0.0,
+    "token_cost_delta": 12371.42
   },
+  "avg_quality": {
+    "baseline": 4.0833,
+    "swarm": 4.125
+  },
+  "avg_constraint_adherence": {
+    "baseline": 0.9625,
+    "swarm": 0.9625
+  },
+  "runs_with_quality_scores": 12,
+  "runs_with_constraint_scores": 12,
   "wall_time_seconds": {
-    "p50": 6.9622,
-    "p95": 13.144
+    "p50": 7.2417,
+    "p95": 12.5068
   },
   "coordination_overhead": {
-    "token_delta": 12346.83
+    "token_delta": 12371.42
   },
-  "vpd_asr": 0.0,
+  "vpd_asr": 0.0079,
   "notable_failures": {}
 }

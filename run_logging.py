@@ -72,6 +72,8 @@ def log_event(
     arm: "monolith" | "swarm"
     phase: "plan" | "act" | "tool" | "verify" | "decide" | "finalize"
     event: "message" | "tool_call" | "tool_result" | "error" | "retry" | "escalation" | "judge_score" | "end"
+    tool / tool_ok: when a tool is invoked, pass tool="tool_name" and tool_ok=True|False so
+    event-level logging tracks tool correctness (Instrumentation Appendix v0.1).
     Matches Instrumentation Appendix v0.1 (ts, run_id, task_id, arm, agent_id, versonality,
     phase, event, tokens_in/out, tool/tool_ok, metadata.{task_bucket, seed, retry_count, handoff_to}).
     """

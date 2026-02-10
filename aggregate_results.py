@@ -77,6 +77,9 @@ def aggregate(runs):
             "notable_failures": {},
         }
 
+    def m(r, key):
+        return (r.get("metrics") or {}).get(key)
+
     baseline_successes = sum(1 for r in runs if r.get("baseline_output") is not None)
     swarm_successes = sum(1 for r in runs if r.get("swarm_output") is not None)
     success_rate_baseline = baseline_successes / n
@@ -96,27 +99,41 @@ def aggregate(runs):
     if avg_baseline_tokens is not None and avg_swarm_tokens is not None:
         token_delta = avg_swarm_tokens - avg_baseline_tokens
 
-    quality_scores_b = [r["metrics"].get("baseline_quality_score") for r in runs]
-    quality_scores_s = [r["metrics"].get("swarm_quality_score") for r in runs]
-    pairs = [(b, s) for b, s in zip(quality_scores_b, quality_scores_s) if b is not None and s is not None]
+    quality_scores_b = [m(r, "baseline_quality_score") for r in runs]
+    quality_scores_s = [m(r, "swarm_quality_score") for r in runs]
+    constraint_b = [m(r, "baseline_constraint_adherence") for r in runs]
+    constraint_s = [m(r, "swarm_constraint_adherence") for r in runs]
+    pairs_q = [(b, s) for b, s in zip(quality_scores_b, quality_scores_s) if b is not None and s is not None]
+    pairs_c = [(b, s) for b, s in zip(constraint_b, constraint_s) if b is not None and s is not None]
     quality_delta = None
-    if pairs:
-        quality_delta = sum(s - b for b, s in pairs) / len(pairs)
+    if pairs_q:
+        quality_delta = sum(s - b for b, s in pairs_q) / len(pairs_q)
+    vals_q_b = [q for q in quality_scores_b if q is not None]
+    vals_q_s = [q for q in quality_scores_s if q is not None]
+    avg_quality_baseline = sum(vals_q_b) / len(vals_q_b) if vals_q_b else None
+    avg_quality_swarm = sum(vals_q_s) / len(vals_q_s) if vals_q_s else None
+    constraint_delta = None
+    if pairs_c:
+        constraint_delta = sum(s - b for b, s in pairs_c) / len(pairs_c)
+    vals_c_b = [c for c in constraint_b if c is not None]
+    vals_c_s = [c for c in constraint_s if c is not None]
+    avg_constraint_baseline = sum(vals_c_b) / len(vals_c_b) if vals_c_b else None
+    avg_constraint_swarm = sum(vals_c_s) / len(vals_c_s) if vals_c_s else None
 
-    # ASR = SR × (quality/5) × constraint_adherence per run, then average. Use per-arm quality when present.
+    # ASR = SR × (quality/5) × constraint_adherence per run, then average. Use per-arm quality and constraint.
     asr_baseline = sum(
         asr_per_run(
             r.get("baseline_output") is not None,
-            r["metrics"].get("baseline_quality_score") or r["metrics"].get("quality_score"),
-            r["metrics"].get("constraint_adherence"),
+            m(r, "baseline_quality_score") or m(r, "quality_score"),
+            m(r, "baseline_constraint_adherence") or m(r, "constraint_adherence"),
         )
         for r in runs
     ) / n
     asr_swarm = sum(
         asr_per_run(
             r.get("swarm_output") is not None,
-            r["metrics"].get("swarm_quality_score") or r["metrics"].get("quality_score"),
-            r["metrics"].get("constraint_adherence"),
+            m(r, "swarm_quality_score") or m(r, "quality_score"),
+            m(r, "swarm_constraint_adherence") or m(r, "constraint_adherence"),
         )
         for r in runs
     ) / n
@@ -158,8 +175,19 @@ def aggregate(runs):
         },
         "deltas": {
             "quality_delta": round(quality_delta, 4) if quality_delta is not None else None,
+            "constraint_adherence_delta": round(constraint_delta, 4) if constraint_delta is not None else None,
             "token_cost_delta": round(token_delta, 2) if token_delta is not None else None,
         },
+        "avg_quality": {
+            "baseline": round(avg_quality_baseline, 4) if avg_quality_baseline is not None else None,
+            "swarm": round(avg_quality_swarm, 4) if avg_quality_swarm is not None else None,
+        },
+        "avg_constraint_adherence": {
+            "baseline": round(avg_constraint_baseline, 4) if avg_constraint_baseline is not None else None,
+            "swarm": round(avg_constraint_swarm, 4) if avg_constraint_swarm is not None else None,
+        },
+        "runs_with_quality_scores": len(pairs_q),
+        "runs_with_constraint_scores": len(pairs_c),
         "wall_time_seconds": {
             "p50": round(p50_wall, 4) if p50_wall is not None else None,
             "p95": round(p95_wall, 4) if p95_wall is not None else None,

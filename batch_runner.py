@@ -1,6 +1,9 @@
 """
 Batch runner: run baseline and swarm for each benchmark task, write results to runs/{task_id}.json.
 Uses shared pipeline (no Streamlit/UI dependencies). No retries, no parallelization.
+
+Event-level logging: log_event is passed to run_baseline/run_swarm so every phase transition
+is written to logs/events.jsonl (Instrumentation Appendix v0.1).
 """
 
 import json
@@ -8,8 +11,8 @@ import os
 import time
 import uuid
 
-from pipeline import SWARM_ROLES, run_baseline, run_swarm
-from run_logging import FailureReason, RUNS_PATH, write_run_summary
+from pipeline import SWARM_ROLES, cost_usd, run_baseline, run_swarm
+from run_logging import EVENTS_PATH, FailureReason, RUNS_PATH, log_event, write_run_summary
 
 _BASE = os.path.dirname(__file__)
 TASKS_V1_PATH = os.path.join(_BASE, "tasks_v1.json")
@@ -44,7 +47,7 @@ def run_task(task):
 
     try:
         baseline_output, baseline_tokens_in, baseline_tokens_out = run_baseline(
-            prompt, run_id, task_id, task_bucket
+            prompt, run_id, task_id, task_bucket, log_event=log_event
         )
     except Exception as e:
         baseline_error_type = type(e).__name__
@@ -55,7 +58,7 @@ def run_task(task):
     if baseline_error_type is None:
         try:
             swarm_output, swarm_tokens_in, swarm_tokens_out = run_swarm(
-                prompt, run_id, task_id, task_bucket
+                prompt, run_id, task_id, task_bucket, log_event=log_event
             )
         except Exception as e:
             swarm_error_type = type(e).__name__
@@ -92,9 +95,9 @@ def run_task(task):
     # Overall success flag kept for backward compatibility (used in runs/{task_id}.json)
     success = baseline_success and swarm_success
 
-    # Emit run summaries for each arm with null quality/constraint_adherence and cost (tokens-only cost can be added later)
-    cost_baseline = 0.0
-    cost_swarm = 0.0
+    # Emit run summaries for each arm with null quality/constraint_adherence. Cost is computed from token usage.
+    cost_baseline = cost_usd(baseline_tokens_in, baseline_tokens_out) if baseline_tokens_used else 0.0
+    cost_swarm = cost_usd(swarm_tokens_in, swarm_tokens_out) if swarm_tokens_used else 0.0
     write_run_summary(
         run_id=run_id,
         task_id=task_id,
@@ -137,6 +140,10 @@ def run_task(task):
             "success": success,
             "quality_score": None,
             "constraint_adherence": None,
+            "baseline_quality_score": None,
+            "swarm_quality_score": None,
+            "baseline_constraint_adherence": None,
+            "swarm_constraint_adherence": None,
             "wall_time_seconds": round(wall_time_seconds, 4),
             "tokens_used": tokens_used,
             "baseline_tokens_used": baseline_tokens_used,
@@ -148,6 +155,8 @@ def run_task(task):
 
 def main(benchmark_path=None):
     os.makedirs(RUNS_DIR, exist_ok=True)
+    # Ensure logs/ exists so event logging (log_event) writes to logs/events.jsonl
+    os.makedirs(os.path.dirname(EVENTS_PATH), exist_ok=True)
     data = load_benchmark(benchmark_path)
     tasks = data.get("tasks", [])
 
