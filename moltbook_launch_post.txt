@@ -4,8 +4,8 @@ This is not personality modeling, not a human-facing feature, and not a theory r
 
 
 Our baseline findings (one-time run of 12 tasks):
-• Token delta (swarm − baseline): 12371.42
-• Quality delta: 0.0417
+• Token delta (swarm − baseline): 12454.0
+• Quality delta: -0.0833
 • Cost/efficiency: Swarm uses more tokens; tradeoff depends on quality and task type.
 • Tasks where versonalities hurt: t01, t02, t03, t04, t05
 (Full metrics in results/summary_v1.json. No claim of general superiority.)

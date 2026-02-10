@@ -54,36 +54,86 @@ def _get_baseline_findings_text() -> str | None:
 
 
 def _format_results_for_post(summary: dict) -> str:
+    """Format benchmark summary as human-readable text (no raw JSON)."""
+    b = summary.get("baseline_metrics") or {}
+    s = summary.get("swarm_metrics") or {}
+    d = summary.get("deltas") or {}
+    aq = summary.get("avg_quality") or {}
+    ac = summary.get("avg_constraint_adherence") or {}
+    wt = summary.get("wall_time_seconds") or {}
+    overhead = summary.get("coordination_overhead") or {}
+    failures = summary.get("notable_failures") or {}
+
+    version = summary.get("benchmark_version", "sv-v1")
+    n = summary.get("task_count", 0)
+
     lines = [
-        "Benchmark version: " + str(summary.get("benchmark_version", "sv-v1")),
-        "Task count: " + str(summary.get("task_count", 0)),
+        f"This run used benchmark {version} with {n} tasks.",
         "",
-        "Baseline: SR, FPS, avg_tokens_used, ASR",
-        "  " + str(summary.get("baseline_metrics", {})),
+        "Single agent (baseline)",
+        "• Success rate: " + _pct(b.get("success_rate")),
+        "• First-pass success: " + _pct(b.get("fps")),
+        "• Average tokens per task: " + _num(b.get("avg_tokens_used")),
+        "• Adjusted success rate (ASR): " + _pct(b.get("asr")),
         "",
-        "Swarm: SR, FPS, avg_tokens_used, ASR",
-        "  " + str(summary.get("swarm_metrics", {})),
+        "Swarm (multi-role)",
+        "• Success rate: " + _pct(s.get("success_rate")),
+        "• First-pass success: " + _pct(s.get("fps")),
+        "• Average tokens per task: " + _num(s.get("avg_tokens_used")),
+        "• Adjusted success rate (ASR): " + _pct(s.get("asr")),
         "",
-        "Deltas: quality_delta, constraint_adherence_delta, token_cost_delta",
-        "  " + str(summary.get("deltas", {})),
+        "Comparison (swarm minus baseline)",
+        "• Quality delta: " + _num(d.get("quality_delta")) + " (positive = swarm scored higher on average)",
+        "• Constraint adherence delta: " + _num(d.get("constraint_adherence_delta")) + " (positive = swarm followed rules better)",
+        "• Extra tokens per task (swarm): " + _num(d.get("token_cost_delta")),
         "",
-        "Avg quality (0–5): baseline, swarm",
-        "  " + str(summary.get("avg_quality", {})) + "  [ASR = SR × (quality/5) × constraint_adherence]",
+        "Average quality (0–5 scale, 5 = excellent): baseline " + _num(aq.get("baseline")) + ", swarm " + _num(aq.get("swarm")) + ".",
+        "Average constraint adherence (0–1, 1 = fully followed): baseline " + _num(ac.get("baseline")) + ", swarm " + _num(ac.get("swarm")) + ".",
+        "Runs with quality scores: " + str(summary.get("runs_with_quality_scores", 0)) + "; with constraint scores: " + str(summary.get("runs_with_constraint_scores", 0)) + ".",
         "",
-        "Avg constraint adherence (0–1): baseline, swarm",
-        "  " + str(summary.get("avg_constraint_adherence", {})),
-        "",
-        "Runs with quality/constraint scores: " + str(summary.get("runs_with_quality_scores", 0)) + " / " + str(summary.get("runs_with_constraint_scores", 0)),
-        "",
-        "Wall time (s): p50, p95",
-        "  " + str(summary.get("wall_time_seconds", {})),
-        "",
-        "Coordination overhead: " + str(summary.get("coordination_overhead")),
-        "VPD (ASR delta): " + str(summary.get("vpd_asr")),
-        "",
-        "Notable failures: " + str(summary.get("notable_failures", {})),
+        "Wall time: typical run " + _num(wt.get("p50")) + " s, 95th percentile " + _num(wt.get("p95")) + " s.",
+        "Coordination overhead: " + _num(overhead.get("token_delta")) + " extra tokens (swarm vs baseline).",
+        "Versonality performance delta (VPD): swarm ASR minus baseline ASR = " + _num(summary.get("vpd_asr")) + " (positive = swarm better on adjusted success).",
     ]
+
+    if failures:
+        lines.append("")
+        lines.append("Notable failures:")
+        for err_type, task_list in failures.items():
+            tasks_str = ", ".join(task_list) if isinstance(task_list, list) else str(task_list)
+            lines.append("• " + str(err_type) + ": " + tasks_str)
+    else:
+        lines.append("")
+        lines.append("Notable failures: none in this run.")
+
+    lines.extend([
+        "",
+        "What the terms mean",
+        "• Success rate (SR): how often the run completed without failing.",
+        "• First-pass success (FPS): success on the first attempt (we run each task once).",
+        "• Quality: 0–5 score for how good the output was (5 = excellent).",
+        "• Constraint adherence: 0–1 score for how well the output followed the rules (1 = fully followed).",
+        "• ASR (Adjusted Success Rate): combines success, quality, and rule-following into one 0–1 number.",
+        "• Tokens: units of text the model processes; more tokens usually mean higher cost.",
+        "• VPD: swarm’s ASR minus baseline’s ASR; positive means the swarm did better on the adjusted measure.",
+    ])
     return "\n".join(lines)
+
+
+def _pct(x) -> str:
+    if x is None:
+        return "—"
+    if isinstance(x, (int, float)):
+        return f"{float(x) * 100:.1f}%" if 0 <= x <= 1 else str(x)
+    return str(x)
+
+
+def _num(x) -> str:
+    if x is None:
+        return "—"
+    if isinstance(x, float):
+        return f"{x:.2f}" if x != int(x) else f"{int(x)}"
+    return str(x)
 
 
 # ---------------------------------------------------------------------------

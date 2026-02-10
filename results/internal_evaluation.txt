@@ -1,19 +1,19 @@
 Internal evaluation artifact (Evaluation Spec v0.1)
-Generated: 2026-02-10T12:03:38Z
+Generated: 2026-02-10T13:29:09Z
 
 ASR = SR × (quality/5) × constraint_adherence (per run, then averaged).
-Avg quality (baseline, swarm): {'baseline': 4.0833, 'swarm': 4.125}
+Avg quality (baseline, swarm): {'baseline': 4.0833, 'swarm': 4.0}
 Avg constraint adherence (baseline, swarm): {'baseline': 0.9625, 'swarm': 0.9625}
 Deltas:
-  Quality delta (swarm − baseline): 0.0417
+  Quality delta (swarm − baseline): -0.0833
   Constraint adherence delta: 0.0
-  Token cost delta (swarm − baseline): 12371.42
-  VPD (ASR delta): 0.0079
+  Token cost delta (swarm − baseline): 12454.0
+  VPD (ASR delta): -0.0158
 
 Cost/efficiency:
   Swarm uses more tokens: True
   Baseline avg tokens: 581.67
-  Swarm avg tokens: 12953.08
+  Swarm avg tokens: 13035.67
 
 Where versonalities helped (task_ids): []
 Where versonalities hurt (task_ids): ['t01', 't02', 't03', 't04', 't05', 't06', 't07', 't08', 't09', 't10', 't11', 't12']

@@ -6,33 +6,43 @@ This post shares measured deltas, cost and coordination overhead, and the limits
 Measured results (from results/summary_v1.json)
 ---
 
-Benchmark version: sv-v1
-Task count: 12
+This run used benchmark sv-v1 with 12 tasks.
 
-Baseline: SR, FPS, avg_tokens_used, ASR
-  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 581.67, 'asr': 0.7858}
+Single agent (baseline)
+• Success rate: 100.0%
+• First-pass success: 100.0%
+• Average tokens per task: 581.67
+• Adjusted success rate (ASR): 78.6%
 
-Swarm: SR, FPS, avg_tokens_used, ASR
-  {'success_rate': 1.0, 'fps': 1.0, 'avg_tokens_used': 12953.08, 'asr': 0.7938}
+Swarm (multi-role)
+• Success rate: 100.0%
+• First-pass success: 100.0%
+• Average tokens per task: 13035.67
+• Adjusted success rate (ASR): 77.0%
 
-Deltas: quality_delta, constraint_adherence_delta, token_cost_delta
-  {'quality_delta': 0.0417, 'constraint_adherence_delta': 0.0, 'token_cost_delta': 12371.42}
+Comparison (swarm minus baseline)
+• Quality delta: -0.08 (positive = swarm scored higher on average)
+• Constraint adherence delta: 0 (positive = swarm followed rules better)
+• Extra tokens per task (swarm): 12454
 
-Avg quality (0–5): baseline, swarm
-  {'baseline': 4.0833, 'swarm': 4.125}  [ASR = SR × (quality/5) × constraint_adherence]
+Average quality (0–5 scale, 5 = excellent): baseline 4.08, swarm 4.
+Average constraint adherence (0–1, 1 = fully followed): baseline 0.96, swarm 0.96.
+Runs with quality scores: 12; with constraint scores: 12.
 
-Avg constraint adherence (0–1): baseline, swarm
-  {'baseline': 0.9625, 'swarm': 0.9625}
+Wall time: typical run 6.73 s, 95th percentile 11.97 s.
+Coordination overhead: 12454 extra tokens (swarm vs baseline).
+Versonality performance delta (VPD): swarm ASR minus baseline ASR = -0.02 (positive = swarm better on adjusted success).
 
-Runs with quality/constraint scores: 12 / 12
+Notable failures: none in this run.
 
-Wall time (s): p50, p95
-  {'p50': 7.2417, 'p95': 12.5068}
-
-Coordination overhead: {'token_delta': 12371.42}
-VPD (ASR delta): 0.0079
-
-Notable failures: {}
+What the terms mean
+• Success rate (SR): how often the run completed without failing.
+• First-pass success (FPS): success on the first attempt (we run each task once).
+• Quality: 0–5 score for how good the output was (5 = excellent).
+• Constraint adherence: 0–1 score for how well the output followed the rules (1 = fully followed).
+• ASR (Adjusted Success Rate): combines success, quality, and rule-following into one 0–1 number.
+• Tokens: units of text the model processes; more tokens usually mean higher cost.
+• VPD: swarm’s ASR minus baseline’s ASR; positive means the swarm did better on the adjusted measure.
 
 ---
 Limits of these findings

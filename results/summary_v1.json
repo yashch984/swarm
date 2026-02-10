@@ -10,17 +10,17 @@
   "swarm_metrics": {
     "success_rate": 1.0,
     "fps": 1.0,
-    "avg_tokens_used": 12953.08,
-    "asr": 0.7938
+    "avg_tokens_used": 13035.67,
+    "asr": 0.77
   },
   "deltas": {
-    "quality_delta": 0.0417,
+    "quality_delta": -0.0833,
     "constraint_adherence_delta": 0.0,
-    "token_cost_delta": 12371.42
+    "token_cost_delta": 12454.0
   },
   "avg_quality": {
     "baseline": 4.0833,
-    "swarm": 4.125
+    "swarm": 4.0
   },
   "avg_constraint_adherence": {
     "baseline": 0.9625,
@@ -29,12 +29,12 @@
   "runs_with_quality_scores": 12,
   "runs_with_constraint_scores": 12,
   "wall_time_seconds": {
-    "p50": 7.2417,
-    "p95": 12.5068
+    "p50": 6.7304,
+    "p95": 11.971
   },
   "coordination_overhead": {
-    "token_delta": 12371.42
+    "token_delta": 12454.0
   },
-  "vpd_asr": 0.0079,
+  "vpd_asr": -0.0158,
   "notable_failures": {}
 }

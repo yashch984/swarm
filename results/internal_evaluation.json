@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-02-10T12:03:38Z",
+  "generated_at": "2026-02-10T13:29:09Z",
   "benchmark_version": "sv-v1",
   "task_count": 12,
   "deltas": {
-    "quality_delta": 0.0417,
+    "quality_delta": -0.0833,
     "constraint_adherence_delta": 0.0,
-    "token_cost_delta": 12371.42
+    "token_cost_delta": 12454.0
   },
   "avg_quality": {
     "baseline": 4.0833,
-    "swarm": 4.125
+    "swarm": 4.0
   },
   "avg_constraint_adherence": {
     "baseline": 0.9625,
@@ -17,9 +17,9 @@
   },
   "runs_with_quality_scores": 12,
   "runs_with_constraint_scores": 12,
-  "vpd_asr": 0.0079,
+  "vpd_asr": -0.0158,
   "coordination_overhead": {
-    "token_delta": 12371.42
+    "token_delta": 12454.0
   },
   "where_versonalities_helped": [],
   "where_versonalities_hurt": [
@@ -87,9 +87,9 @@
   "neutral": [],
   "cost_efficiency_tradeoff": {
     "swarm_uses_more_tokens": true,
-    "token_delta": 12371.42,
+    "token_delta": 12454.0,
     "baseline_avg_tokens": 581.67,
-    "swarm_avg_tokens": 12953.08
+    "swarm_avg_tokens": 13035.67
   },
   "notable_failures": {}
 }

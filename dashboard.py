@@ -92,6 +92,68 @@ def _tail_file(path: str, max_lines: int = 50) -> List[str]:
     return [ln.rstrip("\n") for ln in lines[-max_lines:]]
 
 
+def _summaries_from_runs_dir() -> List[Dict[str, Any]]:
+    """Build run-summary-like dicts from runs/*.json when logs/runs.jsonl is empty or missing."""
+    if not os.path.isdir(RUNS_DIR):
+        return []
+    out: List[Dict[str, Any]] = []
+    for name in sorted(os.listdir(RUNS_DIR)):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(RUNS_DIR, name)
+        run = _load_json(path)
+        if not run:
+            continue
+        task_id = run.get("task_id", name[:-5])
+        task_bucket = run.get("task_bucket", "")
+        m = run.get("metrics") or {}
+        # Baseline (monolith) summary
+        base_ok = run.get("baseline_output") is not None
+        out.append({
+            "run_id": f"{task_id}_baseline",
+            "task_id": task_id,
+            "arm": "monolith",
+            "task_bucket": task_bucket,
+            "outcome": {"success": base_ok, "failure_reason": None, "policy_violation": False, "hallucination_critical": False},
+            "scores": {
+                "quality": m.get("baseline_quality_score") or m.get("quality_score"),
+                "constraint_adherence": m.get("baseline_constraint_adherence") or m.get("constraint_adherence"),
+            },
+            "usage": {
+                "tokens_in": 0,
+                "tokens_out": m.get("baseline_tokens_used") or 0,
+                "wall_seconds": None,
+                "tool_calls": 0,
+                "tool_calls_ok": 0,
+            },
+            "cost_usd": {"model": 0, "tools": 0, "total": 0},
+            "retry_count": 0,
+        })
+        # Swarm summary
+        swarm_ok = run.get("swarm_output") is not None
+        out.append({
+            "run_id": f"{task_id}_swarm",
+            "task_id": task_id,
+            "arm": "swarm",
+            "task_bucket": task_bucket,
+            "outcome": {"success": swarm_ok, "failure_reason": None, "policy_violation": False, "hallucination_critical": False},
+            "scores": {
+                "quality": m.get("swarm_quality_score") or m.get("quality_score"),
+                "constraint_adherence": m.get("swarm_constraint_adherence") or m.get("constraint_adherence"),
+            },
+            "usage": {
+                "tokens_in": 0,
+                "tokens_out": m.get("swarm_tokens_used") or 0,
+                "wall_seconds": None,
+                "tool_calls": 0,
+                "tool_calls_ok": 0,
+            },
+            "cost_usd": {"model": 0, "tools": 0, "total": 0},
+            "retry_count": 0,
+        })
+    return out
+
+
 def main() -> None:
     st.set_page_config(page_title="Swarm Versonalities v1 — Dashboard", layout="wide")
     st.title("Swarm Versonalities v1 — Dashboard")
@@ -144,9 +206,18 @@ def main() -> None:
     with c2:
         st.subheader("Run summary metrics (logs/runs.jsonl)")
         summaries = load_summaries()
+        from_runs_dir = False
+        if not summaries and os.path.isdir(RUNS_DIR):
+            summaries = _summaries_from_runs_dir()
+            from_runs_dir = bool(summaries)
         if not summaries:
-            st.caption("No run summaries found in logs/runs.jsonl.")
+            st.caption(
+                "No run summaries found. This panel is filled when you run the benchmark (batch_runner.py writes to logs/runs.jsonl). "
+                "The left panel uses results/summary_v1.json from runs/*.json, which is the main source of truth."
+            )
         else:
+            if from_runs_dir:
+                st.caption("Derived from runs/*.json (logs/runs.jsonl was empty or missing).")
             arms = ["monolith", "swarm"]
             table: List[Dict[str, Any]] = []
             for arm in arms:

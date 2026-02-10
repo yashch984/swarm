@@ -29,3 +29,8 @@ Thumbs.db
 
 # Instrumentation (Phase 1.3) — optional: ignore logs to avoid committing large JSONL
 logs/
+
+# Legacy / unused (canonical paths: logs/events.jsonl, logs/runs.jsonl; benchmark: runs/*.json)
+runs.jsonl
+run_summaries.jsonl
+events.jsonl

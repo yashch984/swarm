@@ -11,7 +11,7 @@
     "swarm_quality_score": 4.0,
     "baseline_constraint_adherence": 0.95,
     "swarm_constraint_adherence": 1.0,
-    "wall_time_seconds": 16.3285,
+    "wall_time_seconds": 15.7158,
     "tokens_used": 27464,
     "baseline_tokens_used": 999,
     "swarm_tokens_used": 26465,
